@@ -1,5 +1,6 @@
 name: Push and Scan ECR Image
 
+# GitHub Actionsを手動実行
 on:
   workflow_dispatch:
 
@@ -8,9 +9,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # リポジトリのコードをチェックアウト
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # AWSクレデンシャルを設定
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -19,6 +22,7 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      # Amazon ECR にログインし、環境変数に ACCOUNT_ID と ECR_URI を設定
       - name: Log in to Amazon ECR
         id: login-ecr
         run: |
@@ -29,22 +33,26 @@ jobs:
           echo "ECR_URI=$ECR_URI" >> $GITHUB_ENV
           aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin "$ECR_URI"
 
+      # イメージを pull → ECR 用に tag 付け
       - name: Pull and Tag Docker image
         run: |
           set -x
           docker pull ${{ vars.REPO_NAME_DOCKER }}:${{ vars.IMAGE_TAG_DOCKER }}
           docker tag ${{ vars.REPO_NAME_DOCKER }}:${{ vars.IMAGE_TAG_DOCKER }} $ECR_URI:${{ vars.IMAGE_TAG_ECR }}
 
+      # タグを付けたイメージを ECR に push
       - name: Push Docker image to ECR
         run: |
           docker push $ECR_URI:${{ vars.IMAGE_TAG_ECR }}
 
+      # ECR でイメージスキャンを開始
       - name: Start ECR image scan
         run: |
           aws ecr start-image-scan \
             --repository-name ${{ vars.REPO_NAME_ECR }} \
             --image-id imageTag=${{ vars.IMAGE_TAG_ECR }}
 
+      # スキャン完了までポーリング → 結果を解析
       - name: Wait and check scan results
         run: |
           for i in {1..10}; do
@@ -73,6 +81,7 @@ jobs:
             echo "No critical vulnerabilities found."
           fi
 
+      # スキャン結果を常にアップロード (成功/失敗に関わらず実行)
       - name: Upload scan results as artifact
         if: always()
         uses: actions/upload-artifact@v4
