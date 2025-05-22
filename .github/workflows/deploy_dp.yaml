@@ -23,10 +23,15 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      #  aws CLI経由でEKSクラスタのkubeconfigを生成
       - name: Set up kubeconfig for EKS
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }}
 
+      # 1) KonnectのControl Planeリソースを特定
+      # 2) Data Plane用のTLS鍵／証明書を作成
+      # 3) それをKonnectに登録
+      # 4) Control Plane／Telemetryの接続先情報を後続ステップに渡す
       - name: Get Control Plane ID and upload TLS certs
         id: get_cp
         run: |
@@ -56,6 +61,8 @@ jobs:
           echo "tp_endpoint=$TP_ENDPOINT" >> "$GITHUB_OUTPUT"
           echo "cp_endpoint=$CP_ENDPOINT" >> "$GITHUB_OUTPUT"
 
+      # kong名前空間を作成（既存ならスキップ）
+      # 先ほど作成した証明書／鍵を使ってKubernetesのTLS Secret(kong-cluster-cert)をkong名前空間に作成
       - name: Create Kubernetes namespace and TLS secret
         run: |
           kubectl create ns kong || true
@@ -64,6 +71,7 @@ jobs:
             --key=./certs/tls.key \
             --dry-run=client -o yaml | kubectl apply -f -
 
+      # Helmチャート（kong/kong）に渡すカスタム設定ファイルvalues.yamlを動的に生成
       - name: Generate values.yaml
         run: |
           cat <<EOF > ./values.yaml
@@ -73,7 +81,7 @@ jobs:
             
           secretVolumes:
             - kong-cluster-cert
-            
+
           admin:
             enabled: false
 
@@ -107,12 +115,14 @@ jobs:
               memory: "2Gi"
           EOF
 
+      # values.yamlをデプロイし、全PodがReadyになるまで待機
       - name: Deploy with Helm
         run: |
           helm repo add kong https://charts.konghq.com
           helm repo update
           helm upgrade -i my-kong kong/kong -n kong --values ./values.yaml --debug --wait
 
+      # 生成したvalues.yamlとTLS証明書／鍵をGitHub Actionsのビルド成果物としてアップロード
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
