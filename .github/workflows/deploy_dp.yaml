@@ -70,11 +70,6 @@ jobs:
           image:
             repository: ${{ vars.KONG_REPO }}
             tag: ${{ vars.KONG_VER }}
-            pullSecrets:
-              - ghcr-secret
-
-          secretVolumes:
-            - kong-cluster-cert
 
           admin:
             enabled: false
