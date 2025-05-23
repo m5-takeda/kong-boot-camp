@@ -109,7 +109,7 @@ jobs:
           serviceMonitor:
             enabled: true
             labels:
-              release: prometheus-stack
+              release: kube-prometheus-stack
 
           status:
             enabled: true
