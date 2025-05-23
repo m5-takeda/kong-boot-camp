@@ -104,6 +104,7 @@ jobs:
             proxy_access_log: "off"
             dns_stale_ttl: "3600"
             router_flavor: expressions
+            status_listen: 0.0.0.0:8100
 
           ingressController:
             enabled: false
