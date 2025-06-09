@@ -37,6 +37,7 @@ jobs:
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/mnt/deck \
+            --user $(id -u):$(id -g) \
             -w /mnt/deck \
             -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=true \
