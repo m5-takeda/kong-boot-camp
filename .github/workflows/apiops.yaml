@@ -57,7 +57,7 @@ jobs:
             -w /tmp \
             -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
-            -e DECK_KONNECT_TOKEN=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
+            -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
             -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
             kong/deck gateway validate deck.yaml
   diff-deck:
@@ -77,7 +77,7 @@ jobs:
             -w /tmp \
             -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
-            -e DECK_KONNECT_TOKEN=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
+            -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
             -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
             kong/deck gateway diff deck.yaml
 
@@ -98,6 +98,6 @@ jobs:
             -w /tmp \
             -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
-            -e DECK_KONNECT_TOKEN=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
+            -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
             -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
             kong/deck gateway sync deck.yaml
