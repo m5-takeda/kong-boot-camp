@@ -36,13 +36,13 @@ jobs:
       - name: Convert OAS to deck YAML
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/mnt/deck \
+            -v ${{ github.workspace }}:/tmp \
             --user $(id -u):$(id -g) \
-            -w /mnt/deck \
+            -w /tmp \
             -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=true \
             -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
-            kong/deck file openapi2kong -s openapi/openapi.yaml -o /mnt/deck/deck.yaml
+            kong/deck file openapi2kong -s openapi/openapi.yaml -o /tmp/deck.yaml
       - name: Upload deck.yaml artifact
         uses: actions/upload-artifact@v4
         with:
@@ -61,8 +61,9 @@ jobs:
       - name: Validate deck.yaml
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/files \
-            -w /files \
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
             kong/deck gateway validate deck.yaml
 
   diff-deck:
@@ -75,19 +76,15 @@ jobs:
         with:
           name: deck
       - name: Diff deck.yaml and Gateway
-        env:
-          DECK_KONG_ADDR: ${{ env.KONG_ADDR }}
-          DECK_TLS_SKIP_VERIFY: true
-          DECK_HEADERS: "kong-admin-token:${{ env.KONNECT_TOKEN }}"
-          WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/files \
-            -w /files \
-            -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
-            -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
-            -e DECK_HEADERS="$DECK_HEADERS" \
-            kong/deck gateway diff deck.yaml --workspace $WORKSPACE
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
+            -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=true \
+            -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
+            kong/deck gateway diff deck.yaml --workspace ${{ vars.WORKSPACE }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -99,16 +96,12 @@ jobs:
         with:
           name: deck
       - name: Deploy
-        env:
-          DECK_KONG_ADDR: ${{ env.KONG_ADDR }}
-          DECK_TLS_SKIP_VERIFY: true
-          DECK_HEADERS: "kong-admin-token:${{ env.KONNECT_TOKEN }}"
-          WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/files \
-            -w /files \
-            -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
-            -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
-            -e DECK_HEADERS="$DECK_HEADERS" \
-            kong/deck gateway sync deck.yaml --workspace $WORKSPACE
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
+            -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=true \
+            -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
+            kong/deck gateway sync deck.yaml --workspace ${{ vars.WORKSPACE }}
