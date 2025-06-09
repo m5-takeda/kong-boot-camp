@@ -42,7 +42,7 @@ jobs:
 
   merge-deck:
     runs-on: ubuntu-latest
-    needs: lint
+    needs: convert-deck
     if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +63,7 @@ jobs:
           path: merged-deck.yaml
 
   valid-deck:
-    runs-on: ubuntu-latest
+    runs-on: merge-deck
     needs: convert-deck
     if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     steps:
