@@ -36,12 +36,12 @@ jobs:
       - name: Convert OAS to deck YAML
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/files \
-            -w /files \
+            -v ${{ github.workspace }}:/mnt/deck \
+            -w /mnt/deck \
             -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=true \
             -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
-            kong/deck file openapi2kong -s openapi/openapi.yaml -o deck.yaml
+            kong/deck file openapi2kong -s openapi/openapi.yaml -o /mnt/deck/deck.yaml
       - name: Upload deck.yaml artifact
         uses: actions/upload-artifact@v4
         with:
