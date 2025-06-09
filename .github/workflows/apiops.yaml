@@ -36,12 +36,12 @@ jobs:
       - name: Convert OAS to deck YAML
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/tmp \
-            -w /tmp \
+            -v ${{ github.workspace }}:/files \
+            -w /files \
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
-            kong/deck file openapi2kong -s openapi/openapi.yaml -o openapi/deck.yaml
+            kong/deck file openapi2kong -s openapi/openapi.yaml -o deck.yaml
       - name: Upload deck.yaml artifact
         uses: actions/upload-artifact@v4
         with:
@@ -60,8 +60,8 @@ jobs:
       - name: Validate deck.yaml
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/tmp \
-            -w /tmp \
+            -v ${{ github.workspace }}:/files \
+            -w /files \
             kong/deck gateway validate deck.yaml
 
   diff-deck:
@@ -81,8 +81,8 @@ jobs:
           WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/tmp \
-            -w /tmp \
+            -v ${{ github.workspace }}:/files \
+            -w /files \
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
@@ -105,8 +105,8 @@ jobs:
           WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/tmp \
-            -w /tmp \
+            -v ${{ github.workspace }}:/files \
+            -w /files \
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
