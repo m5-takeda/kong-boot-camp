@@ -36,8 +36,8 @@ jobs:
       - name: Convert OAS to deck YAML
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
@@ -60,8 +60,8 @@ jobs:
       - name: Validate deck.yaml
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
             kong/deck gateway validate deck.yaml
 
   diff-deck:
@@ -81,8 +81,8 @@ jobs:
           WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
@@ -105,8 +105,8 @@ jobs:
           WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
