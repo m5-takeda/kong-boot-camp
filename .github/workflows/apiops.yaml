@@ -40,7 +40,7 @@ jobs:
           name: deck
           path: deck.yaml
 
-  add-pulugins-deck:
+  add-puugins-deck:
     runs-on: ubuntu-latest
     needs: convert-deck
     if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
@@ -57,29 +57,29 @@ jobs:
             -w /tmp \
             kong/deck file add-plugins -s deck.yaml \
             kong/plugins/key-auth.yaml kong/plugins/prometheus.yaml kong/plugins/proxy-cache.yaml kong/plugins/rate-limiting-advanced.yaml \
-            -o merged-deck.yaml
+            -o add-plugins-deck.yaml
       - name: Upload merged-deck.yaml artifact
         uses: actions/upload-artifact@v4
         with:
-          name: merged-deck
-          path: merged-deck.yaml
+          name: add-plugins-deck
+          path: add-plugins-deck.yaml
           
   add-consumers-deck:
     runs-on: ubuntu-latest
-    needs: add-pulugins-deck
+    needs: add-plugins-deck
     if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: merged-deck
+          name: add-plugins-deck
       - name: Merge plugins to deck YAML
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/tmp \
             --user $(id -u):$(id -g) \
             -w /tmp \
-            kong/deck file merge merged-deck.yaml kong/consumers/consumer.yaml -o merged-deck.yaml
+            kong/deck file merge add-plugins-deck.yaml kong/consumers/consumer.yaml -o merged-deck.yaml
       - name: Upload merged-deck.yaml artifact
         uses: actions/upload-artifact@v4
         with:
