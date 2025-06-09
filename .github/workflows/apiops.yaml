@@ -10,12 +10,6 @@ on:
     paths:
       - "openapi/**/*"
 
-# env:
-#   KONG_ADDR: https://us.api.konghq.com
-#   DECK_TLS_SKIP_VERIFY: true
-#   DECK_HEADERS: kong-admin-token:${{ secrets.KONNECT_TOKEN }}
-#   WORKSPACE: m5-takeda
-
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -64,6 +58,9 @@ jobs:
             --user $(id -u):$(id -g) \
             -v ${{ github.workspace }}:/tmp \
             -w /tmp \
+            -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=true \
+            -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
             kong/deck gateway validate deck.yaml
 
   diff-deck:
