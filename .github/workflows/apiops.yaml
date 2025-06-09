@@ -40,6 +40,28 @@ jobs:
           name: deck
           path: deck.yaml
 
+  merge-deck:
+    runs-on: ubuntu-latest
+    needs: lint
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge plugins to deck YAML
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/tmp \
+            --user $(id -u):$(id -g) \
+            -w /tmp \
+            kong/deck file add-plugins -s kong/plugins/key-auth.yaml \
+            kong/plugins/prometheus.yaml kong/plugins/proxy-cache.yaml kong/plugins/rate-limiting-advanced.yaml \
+            -o merged-deck.yaml && \
+            kong/deck file merge merged-deck.yaml kong/consumers/consumer.yaml -o merged-deck.yaml
+      - name: Upload merged-deck.yaml artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-deck
+          path: merged-deck.yaml
+
   valid-deck:
     runs-on: ubuntu-latest
     needs: convert-deck
@@ -49,7 +71,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: deck
-      - name: Validate deck.yaml
+      - name: Validate merged-deck.yaml
         run: |
           docker run --rm \
             --user $(id -u):$(id -g) \
@@ -59,7 +81,8 @@ jobs:
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
             -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
             -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
-            kong/deck gateway validate deck.yaml
+            kong/deck gateway validate merged-deck.yaml
+
   diff-deck:
     runs-on: ubuntu-latest
     needs: valid-deck
@@ -69,7 +92,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: deck
-      - name: Diff deck.yaml and Gateway
+      - name: Diff merged-deck.yaml and Gateway
         run: |
           docker run --rm \
             --user $(id -u):$(id -g) \
@@ -79,7 +102,7 @@ jobs:
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
             -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
             -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
-            kong/deck gateway diff deck.yaml
+            kong/deck gateway diff merged-deck.yaml
 
   deploy:
     runs-on: ubuntu-latest
@@ -100,4 +123,4 @@ jobs:
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
             -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
             -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
-            kong/deck gateway sync deck.yaml
+            kong/deck gateway sync merged-deck.yaml

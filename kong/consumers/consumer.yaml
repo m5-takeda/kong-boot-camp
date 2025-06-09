@@ -1,0 +1,4 @@
+consumers:
+- keyauth_credentials:
+  - key: alice-key
+  username: alice
