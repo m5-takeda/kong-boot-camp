@@ -86,3 +86,4 @@ deploy:
     set -x
     echo "Deploy"
     deck gateway sync deck.yaml --workspace $WORKSPACE
+    
