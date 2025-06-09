@@ -10,11 +10,11 @@ on:
     paths:
       - "openapi/**/*"
 
-env:
-  KONG_ADDR: https://us.api.konghq.com
-  DECK_TLS_SKIP_VERIFY: true
-  DECK_HEADERS: kong-admin-token:${{ secrets.KONNECT_TOKEN }}
-  WORKSPACE: m5-takeda
+# env:
+#   KONG_ADDR: https://us.api.konghq.com
+#   DECK_TLS_SKIP_VERIFY: true
+#   DECK_HEADERS: kong-admin-token:${{ secrets.KONNECT_TOKEN }}
+#   WORKSPACE: m5-takeda
 
 jobs:
   lint:
