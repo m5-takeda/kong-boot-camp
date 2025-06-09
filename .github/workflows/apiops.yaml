@@ -152,9 +152,6 @@ jobs:
   upload-spec:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    env:
-      KONNECT_TOKEN: ${{ secrets.KONNECT_TOKEN }}
-      PRODUCT_ID: a1f7daf3-2423-42ae-b210-2582df55a6af
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -169,15 +166,15 @@ jobs:
         id: get_version_id
         run: |
           VERSION_ID=$(curl -X GET -s \
-            "https://us.api.konghq.com/v2/api-products/$PRODUCT_ID/product-versions" \
-            -H "Authorization: Bearer $KONNECT_TOKEN" \
+            "https://us.api.konghq.com/v2/api-products/a1f7daf3-2423-42ae-b210-2582df55a6af/product-versions" \
+            -H "Authorization: Bearer ${{ secrets.KONNECT_TOKEN }}" \
             | jq -r '.data[] | select(.name == "v1") | .id')
       - name: Upload specification to Kong
         run: |
           curl -X POST \
-            "https://us.api.konghq.com/v2/api-products/$PRODUCT_ID/product-versions/${{ steps.get_version_id.outputs.version_id }}/specifications" \
+            "https://us.api.konghq.com/v2/api-products/a1f7daf3-2423-42ae-b210-2582df55a6af/product-versions/${{ steps.get_version_id.outputs.version_id }}/specifications" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $KONNECT_TOKEN" \
+            -H "Authorization: Bearer ${{ secrets.KONNECT_TOKEN }}" \
             -d '{
               "name": "openapi.yaml",
               "content": "'"${{ steps.encode.outputs.content }}"'"
