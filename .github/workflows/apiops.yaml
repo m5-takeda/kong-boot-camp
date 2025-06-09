@@ -25,7 +25,7 @@ jobs:
       - name: Lint OAS spec
         uses: docker://kong/inso
         with:
-          args: lint spec openapi/swagger.yaml
+          args: lint spec openapi/openapi.yaml
 
   convert-deck:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
             -e DECK_KONG_ADDR="$DECK_KONG_ADDR" \
             -e DECK_TLS_SKIP_VERIFY="$DECK_TLS_SKIP_VERIFY" \
             -e DECK_HEADERS="$DECK_HEADERS" \
-            kong/deck file openapi2kong -s openapi/swagger.yaml -o deck.yaml
+            kong/deck file openapi2kong -s openapi/openapi.yaml -o deck.yaml
       - name: Upload deck.yaml artifact
         uses: actions/upload-artifact@v4
         with:
