@@ -38,9 +38,9 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/files \
             -w /files \
-            -e DECK_KONG_ADDR=$KONG_ADDR \
-            -e DECK_TLS_SKIP_VERIFY=$DECK_TLS_SKIP_VERIFY \
-            -e DECK_HEADERS=$DECK_HEADERS \
+            -e DECK_KONG_ADDR=${{ vars.KONG_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=true \
+            -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
             kong/deck file openapi2kong -s openapi/openapi.yaml -o deck.yaml
       - name: Upload deck.yaml artifact
         uses: actions/upload-artifact@v4
