@@ -11,7 +11,7 @@ on:
       - "openapi/**/*"
 
 env:
-  DECK_KONG_ADDR: https://us.api.konghq.com
+  KONG_ADDR: https://us.api.konghq.com
   DECK_TLS_SKIP_VERIFY: true
   DECK_HEADERS: kong-admin-token:${{ secrets.KONNECT_TOKEN }}
   WORKSPACE: m5-takeda
@@ -38,9 +38,9 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/files \
             -w /files \
-            -e DECK_KONG_ADDR=${{ env.KONG_ADDR }} \
-            -e DECK_TLS_SKIP_VERIFY=true \
-            -e DECK_HEADERS="kong-admin-token:${{ env.KONNECT_TOKEN }}" \
+            -e DECK_KONG_ADDR=$KONG_ADDR \
+            -e DECK_TLS_SKIP_VERIFY=$DECK_TLS_SKIP_VERIFY \
+            -e DECK_HEADERS=$DECK_HEADERS \
             kong/deck file openapi2kong -s openapi/openapi.yaml -o deck.yaml
       - name: Upload deck.yaml artifact
         uses: actions/upload-artifact@v4
