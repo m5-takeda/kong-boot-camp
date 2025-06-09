@@ -243,3 +243,4 @@ components:
       required:
         - id
         - ratings
+        

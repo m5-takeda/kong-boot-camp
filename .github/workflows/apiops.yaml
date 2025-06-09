@@ -169,13 +169,13 @@ jobs:
         id: get_version_id
         run: |
           VERSION_ID=$(curl -X GET -s \
-            "https://us.api.konghq.com/v2/api-products/${PRODUCT_ID}/product-versions" \
+            "https://us.api.konghq.com/v2/api-products/$PRODUCT_ID/product-versions" \
             -H "Authorization: Bearer $KONNECT_TOKEN" \
             | jq -r '.data[] | select(.name == "v1") | .id')
       - name: Upload specification to Kong
         run: |
           curl -X POST \
-            "https://us.api.konghq.com/v2/api-products/${PRODUCT_ID}/product-versions/${{ steps.get_version_id.outputs.version_id }}/specifications" \
+            "https://us.api.konghq.com/v2/api-products/$PRODUCT_ID/product-versions/${{ steps.get_version_id.outputs.version_id }}/specifications" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $KONNECT_TOKEN" \
             -d '{
