@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'openapi/**/*'
+      - "openapi/**/*"
   pull_request:
     paths:
-      - 'openapi/**/*'
+      - "openapi/**/*"
 
 env:
   DECK_KONG_ADDR: https://us.api.konghq.com
