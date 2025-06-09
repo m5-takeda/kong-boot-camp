@@ -34,6 +34,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Convert OAS to deck YAML
+        env:
+          DECK_KONG_ADDR: ${{ env.KONG_ADDR }}
+          DECK_TLS_SKIP_VERIFY: true
+          DECK_HEADERS: "kong-admin-token:${{ env.KONNECT_TOKEN }}"
+          WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/files \
