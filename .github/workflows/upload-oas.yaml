@@ -1,0 +1,37 @@
+name: Upload OAS
+
+on:
+  workflow_dispatch:
+
+jobs:  
+  upload-oas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      - name: Encode YAML file to base64
+        id: encode
+        run: |
+          CONTENT=$(base64 -w0 ${{ github.workspace }}/openapi/openapi.yaml)
+          echo "content=$CONTENT" >> $GITHUB_OUTPUT
+      - name: Get Kong version ID
+        id: get_version_id
+        run: |
+          VERSION_ID=$(curl -X GET -s \
+            "https://us.api.konghq.com/v2/api-products/a1f7daf3-2423-42ae-b210-2582df55a6af/product-versions" \
+            -H "Authorization: Bearer ${{ secrets.KONNECT_TOKEN }}" \
+            | jq -r '.data[] | select(.name == "v1") | .id')
+          echo "version_id=$VERSION_ID" >> $GITHUB_OUTPUT
+      - name: Upload specification to Kong
+        run: |
+          curl -X POST \
+            "https://us.api.konghq.com/v2/api-products/a1f7daf3-2423-42ae-b210-2582df55a6af/product-versions/${{ steps.get_version_id.outputs.version_id }}/specifications" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.KONNECT_TOKEN }}" \
+            -d '{
+              "name": "openapi.yaml",
+              "content": "'"${{ steps.encode.outputs.content }}"'"
+            }'
