@@ -61,8 +61,8 @@ jobs:
             -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
             -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
             -e DECK_HEADERS=kong-admin-token:${{ secrets.KONNECT_TOKEN }} \
-            kong/deck gateway validate deck.yaml --workspace ${{ vars.KONNECT_CONTROL_PLANE_NAME }}
-
+            -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
+            kong/deck gateway validate deck.yaml
   diff-deck:
     runs-on: ubuntu-latest
     needs: valid-deck
