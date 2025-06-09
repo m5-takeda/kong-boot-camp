@@ -1,88 +1,103 @@
-stages:
-- test
-- convert
-- valid
-- deploy
+name: Kong Deck Workflow
 
-variables:
-  DECK_KONG_ADDR: https://us.api.konghq.com
-  DECK_TLS_SKIP_VERIFY: true
-  DECK_HEADERS: "kong-admin-token:$KONNECT_TOKEN"
-  WORKSPACE: "m5-takeda"
-
-lint:
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    changes:
-    - openapi/**/*
-  image: kong/inso
-  stage: test
-  script:
-  - |
-    set -x 
-    echo "Lint OAS spec."
-    inso lint spec openapi/httpbin.yaml
-
-convert-deck:
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    changes:
-    - openapi/**/*
-  - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
-    changes:
-    - openapi/**/*
-  image: kong/deck
-  stage: convert
-  script:
-  - |
-    set -x
-    echo "Convert OAS to deck YAML."
-    deck file openapi2kong -s openapi/httpbin.yaml -o deck.yaml
-  artifacts:
+on:
+  push:
+    branches:
+      - main
     paths:
-      - deck.yaml
+      - "openapi/**/*"
+  pull_request:
+    paths:
+      - "openapi/**/*"
 
-valid-deck:
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    changes:
-    - openapi/**/*
-  - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
-    changes:
-    - openapi/**/*
-  image: kong/deck
-  stage: valid
-  script:
-  - |
-    set -x
-    echo "Validate deck.yaml"
-    deck gateway validate deck.yaml
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint OAS spec
+        uses: docker://kong/inso
+        with:
+          args: lint spec openapi/openapi.yaml
 
-diff-deck:
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    changes:
-    - openapi/**/*
-  - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
-    changes:
-    - openapi/**/*
-  image: kong/deck
-  stage: valid
-  script:
-  - |
-    set -x
-    echo "Diff deck.yaml and Gateway"
-    deck gateway diff deck.yaml --workspace $WORKSPACE
+  convert-deck:
+    runs-on: ubuntu-latest
+    needs: lint
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Convert OAS to deck YAML
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/tmp \
+            --user $(id -u):$(id -g) \
+            -w /tmp \
+            kong/deck file openapi2kong -s openapi/openapi.yaml -o /tmp/deck.yaml
+      - name: Upload deck.yaml artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deck
+          path: deck.yaml
 
-deploy:
-  rules:
-  - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
-    changes:
-    - openapi/**/*
-  image: kong/deck
-  stage: deploy
-  script:
-  - |
-    set -x
-    echo "Deploy"
-    deck gateway sync deck.yaml --workspace $WORKSPACE
+  valid-deck:
+    runs-on: ubuntu-latest
+    needs: convert-deck
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: deck
+      - name: Validate deck.yaml
+        run: |
+          docker run --rm \
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
+            -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
+            -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
+            -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
+            kong/deck gateway validate deck.yaml
+  diff-deck:
+    runs-on: ubuntu-latest
+    needs: valid-deck
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: deck
+      - name: Diff deck.yaml and Gateway
+        run: |
+          docker run --rm \
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
+            -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
+            -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
+            -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
+            kong/deck gateway diff deck.yaml
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: diff-deck
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: deck
+      - name: Deploy
+        run: |
+          docker run --rm \
+            --user $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/tmp \
+            -w /tmp \
+            -e DECK_KONNECT_ADDR=${{ vars.KONNECT_ADDR }} \
+            -e DECK_TLS_SKIP_VERIFY=${{ vars.TLS_SKIP_VERIFY }} \
+            -e DECK_KONNECT_TOKEN=${{ secrets.KONNECT_TOKEN }} \
+            -e DECK_KONNECT_CONTROL_PLANE_NAME=${{ vars.KONNECT_CONTROL_PLANE_NAME }} \
+            kong/deck gateway sync deck.yaml
